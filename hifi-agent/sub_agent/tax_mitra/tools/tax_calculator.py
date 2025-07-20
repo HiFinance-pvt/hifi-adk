@@ -23,7 +23,7 @@ def tax_calculator(taxable_income: float, tax_regime: str, assessment_year: str)
             - surcharge: Surcharge if applicable
             - final_tax: Final tax amount including all components
     """
-    print('insdie tax cal')
+    logging.debug('Inside tax_calculator function')
     
     # Validate inputs
     if taxable_income < 0:

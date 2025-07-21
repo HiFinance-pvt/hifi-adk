@@ -5,6 +5,8 @@ from .tools.income_aggregator import income_aggregator
 from .tools.fill_and_submit_itr_form import fill_and_submit_itr_form
 from .tools.track_refund import track_refund
 from .tools.compute_taxable_income import compute_taxable_income
+from .subagents.tax_exemption_deductions.agent import tax_exemption_deductions
+from google.adk.tools.agent_tool import AgentTool
 
 tax_mitra = LlmAgent(
     model='gemini-2.0-flash-001',
@@ -21,7 +23,7 @@ IMPORTANT: This system uses session-based authentication. When tools require log
 2. After successful login, their authentication persists for the current conversation session
 3. All subsequent tool calls in this session will work without re-authentication
 
-
+When user asks for filing ITR you should use tax_exemption_deductions tool to get the tax exemptions and deductions and then use the fill_and_submit_itr_form tool to fill the ITR form.
 
 You have direct access to and should intelligently leverage the following powerful tools:
 1.  **`tax_calculator(taxable_income: float, tax_regime: str, assessment_year: str) -> dict`**: This tool calculates the final tax liability based on the provided taxable income, chosen tax regime (e.g., 'old' or 'new'), and the relevant assessment year.
@@ -29,6 +31,7 @@ You have direct access to and should intelligently leverage the following powerf
 3.  **`fill_and_submit_itr_form(itr_form_type: str, user_data: dict, pan: str) -> dict`**: This tool is crucial for preparing and initiating the submission of the Income Tax Return (ITR). It requires the specific ITR form type (e.g., 'ITR1', 'ITR2'), a comprehensive dictionary of user-provided tax data, and the user's Permanent Account Number (PAN).
 4.  **`compute_taxable_income(gross_income: float, deductions: dict, exemptions: dict, tax_regime: str) -> float`**: This tool computes the user's total taxable income by taking their aggregated gross income, applying eligible deductions (e.g., {'80C': 150000, '80D': 25000}), and exemptions, considering the chosen tax regime.
 5.  **`track_refund(acknowledgement_number: str, pan: str) -> dict`**: This tool allows you to check the real-time status of a user's tax refund once their ITR has been filed, using the provided acknowledgement number and PAN.
+6.  **`tax_exemption_deductions(bank_transactions: list[dict]) -> dict`**: This tool calculates the tax exemption deductions based on the provided bank transactions.
 
 **Your Internal Guidelines and Knowledge Base:**
 
@@ -78,5 +81,6 @@ To get started and ensure I provide the most accurate guidance, could you please
         compute_taxable_income,
         fill_and_submit_itr_form,
         track_refund,
+        AgentTool(tax_exemption_deductions),
     ],
 )

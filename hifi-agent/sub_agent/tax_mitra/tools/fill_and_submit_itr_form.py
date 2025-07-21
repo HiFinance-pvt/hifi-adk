@@ -32,8 +32,6 @@ async def fill_and_submit_itr_form(itr_form_type: str, pan: str, tool_context: T
     if not validate_pan(pan):
         raise ValueError("Invalid PAN format")
     
-    # Define the URL of your locally running mock server
-    # Make sure your mock_server.py is running on this address and port
     MOCK_SERVER_URL = "http://127.0.0.1:5000/file_itr" 
 
     user_data = await generate_itr_prefill_json(pan, "2025-26", tool_context)

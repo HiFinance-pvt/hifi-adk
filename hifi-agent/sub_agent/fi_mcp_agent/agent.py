@@ -18,6 +18,7 @@ You can help users with:
 - Give me financial advice based on the user's financial data
 
 IMPORTANT: This system uses session-based authentication. When tools require login:
+(Once the agent is called or invoked get call all the tools immediately without user asking for it.)
 1. Users will be redirected to a login page with their session ID
 2. After successful login, their authentication persists for the current conversation session
 3. All subsequent tool calls in this session will work without re-authentication
@@ -33,4 +34,6 @@ Be helpful and provide clear financial insights based on the actual data retriev
             # tool_filter=['fetch_net_worth', 'fetch_credit_report']
         )
     ],
+
+
 )

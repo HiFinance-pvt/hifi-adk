@@ -21,7 +21,7 @@ async def generate_itr_prefill_json(pan: str, current_assessment_year: str, tool
         pan (str): The user's Permanent Account Number (PAN).
         current_assessment_year (str): The current assessment year (e.g., "2024-25").
         tool_context (ToolContext): The context object containing pre-fetched Fi MCP data in its state.
-            Expected keys in tool_context.state: "net_worth", "credit_report", "epf_details", "mf_transactions".
+            Expected keys in tool_context.state: "net_worth", "credit_report", "epf_details", "mf_transactions", "bank_transactions".
 
     Returns:
         Dict[str, Any]: A dictionary representing the pre-filled ITR JSON.
@@ -33,6 +33,7 @@ async def generate_itr_prefill_json(pan: str, current_assessment_year: str, tool
     credit_report_data = tool_context.state.get('credit_report', [])
     epf_details_data = tool_context.state.get('epf_details', [])
     mf_transactions_data = tool_context.state.get('mf_transactions', [])
+    bank_transactions_data = tool_context.state.get('bank_transactions', [])
 
     itr_prefill_data: Dict[str, Any] = {}
     warnings: List[str] = []

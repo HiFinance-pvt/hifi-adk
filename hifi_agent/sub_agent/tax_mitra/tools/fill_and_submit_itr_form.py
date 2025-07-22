@@ -8,7 +8,9 @@ from datetime import datetime
 from google.adk.tools.tool_context import ToolContext
 from .generate_itr_prefill_json import generate_itr_prefill_json
 from .shared_utils import validate_pan
-
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 async def fill_and_submit_itr_form(itr_form_type: str, pan: str, tool_context: ToolContext) -> Dict[str, Any]:
     """
@@ -32,7 +34,13 @@ async def fill_and_submit_itr_form(itr_form_type: str, pan: str, tool_context: T
     if not validate_pan(pan):
         raise ValueError("Invalid PAN format")
     
-    MOCK_SERVER_URL = "http://127.0.0.1:5000/file_itr" 
+    MOCK_SERVER_URL = os.getenv("ITR_SERVER_URL")
+
+    if MOCK_SERVER_URL is None:
+        raise ValueError("ITR_SERVER_URL is not set in the environment variables")
+    
+    if MOCK_SERVER_URL == "":
+        raise ValueError("ITR_SERVER_URL is empty in the environment variables")
 
     user_data = await generate_itr_prefill_json(pan, "2025-26", tool_context)
 

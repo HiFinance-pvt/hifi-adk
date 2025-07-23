@@ -1,13 +1,12 @@
-# TODO: 
-# add days and time limit for buy/sell orders
-# add symbol validation
-# add number validation
-
 from google.adk.agents import LlmAgent
 # from google.adk.tools.openapi_tool.openapi_spec_parser.openapi_toolset import OpenAPIToolset
 
 from .tools.trade_tools import  buy_stock, sell_stock, get_portfolio, get_order_status, get_zerodha_login_url, check_kite_auth, get_user_profile
 
+# TODO: 
+# add days and time limit for buy/sell orders
+# add symbol validation
+# add number validation
 
 trader_agent = LlmAgent(
     model='gemini-2.0-flash-001',

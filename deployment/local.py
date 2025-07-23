@@ -70,12 +70,6 @@ async def main():
         message=test_message,
     )
 
-    test_message2 ="file my ITR"
-    gen = app.async_stream_query(
-        user_id="test_user",
-        session_id=session.id,
-        message=test_message2,
-    )
     try:
         async for event in gen:
             print(event)

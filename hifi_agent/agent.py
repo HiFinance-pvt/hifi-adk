@@ -2,8 +2,8 @@ from google.adk.agents import Agent
 from .sub_agent.tax_mitra.agent import tax_mitra
 from .sub_agent.debt_squasher_agent.agent import debt_squasher_agent
 from .sub_agent.sebi_agent.agent import sebi_agent
-from .sub_agent.trader_agent.agent import trader_agent
 from .sub_agent.fi_mcp_agent.agent import build_fi_mcp_agent
+from .sub_agent.trader_agent.agent import trader_agent
 from google.adk.tools.agent_tool import AgentTool
 
 root_agent = Agent(

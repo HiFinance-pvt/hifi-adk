@@ -7,10 +7,14 @@ load_dotenv()
 
 def build_fi_mcp_agent():
 
+    if os.getenv("FI_MCP_URL") is None:
+        raise ValueError("FI_MCP_URL is not set in the environment variables")
+
+    FI_MCP_URL = os.getenv("FI_MCP_URL")
     
     # These should be created *inside* the function so they’re not evaluated at import-time
     connection_params = StreamableHTTPConnectionParams(
-        url="http://localhost:8080/mcp/stream"
+        url=FI_MCP_URL
     )
 
     toolset = MCPToolset(connection_params=connection_params ,errlog=None)

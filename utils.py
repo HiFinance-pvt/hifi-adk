@@ -1,5 +1,6 @@
 from google.adk.events import Event
 import asyncio
+from google.adk.auth import AuthConfig 
 
 # --- Helper Functions ---
 async def get_user_input(prompt: str) -> str:

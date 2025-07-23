@@ -1,11 +1,30 @@
 [project]
 name = "hifi-adk"
 version = "0.1.0"
-description = "Add your description here"
+description = "HIFI Agent Development Kit"
+authors = [
+    {name="Harsh Duche", email="ducheharsh@gmail.com"},
+    {name="Aditya Tote", email="adityatote24@gmail.com"},
+    {name="Adhar Battulwar", email="adharbattulwar@gmail.com"},
+]
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 dependencies = [
     "firebase-admin>=6.9.0",
     "google-adk>=1.7.0",
+    "google-cloud-aiplatform>=1.104.0",
+    "absl-py>=2.1.0",
+    "cloudpickle>=3.1.1",
+    "requests>=2.32.4",
     "kiteconnect>=5.0.1",
 ]
+
+[project.scripts]
+hifi-agent = "hifi_agent:app"
+deploy-local = "deployment.local:main"
+deploy-remote = "deployment.remote:main"
+cleanup = "deployment.cleanup:cleanup_deployment"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["hifi_agent", "deployment"]

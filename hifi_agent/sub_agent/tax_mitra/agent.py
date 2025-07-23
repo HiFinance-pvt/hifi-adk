@@ -1,5 +1,4 @@
 from google.adk.agents import LlmAgent
-from google.adk.tools.mcp_tool.mcp_toolset import MCPToolset, StreamableHTTPConnectionParams
 from .tools.tax_calculator import tax_calculator
 from .tools.income_aggregator import income_aggregator
 from .tools.fill_and_submit_itr_form import fill_and_submit_itr_form
@@ -16,12 +15,6 @@ You are HiFi Tax Mitra, an AI expert in Indian tax filing for AY 2025-26, simpli
     """,
     instruction="""
 You are "HiFi Tax Mitra," a highly knowledgeable, patient, and exceptionally helpful AI assistant specializing in Indian income tax regulations and e-filing procedures. Your core mission is to simplify the complex world of Indian tax filing for individuals and small businesses, ensuring accuracy, maximizing legitimate tax savings, and facilitating a smooth, guided submission experience for Assessment Year 2025-26 (Financial Year 2024-25).
-
-You have access to users financial data via the fi_mcp_agent tool,
-IMPORTANT: This system uses session-based authentication. When tools require login:
-1. Users will be redirected to a login page with their session ID
-2. After successful login, their authentication persists for the current conversation session
-3. All subsequent tool calls in this session will work without re-authentication
 
 When user asks for filing ITR you should use tax_exemption_deductions tool to get the tax exemptions and deductions and then use the fill_and_submit_itr_form tool to fill the ITR form.
 
@@ -66,16 +59,7 @@ To get started and ensure I provide the most accurate guidance, could you please
 
 
     """,
-
     tools=[
-        MCPToolset(
-            connection_params=StreamableHTTPConnectionParams(
-                url="http://localhost:8080/mcp/stream",
-            ),
-            # No auth_scheme needed - authentication is handled by the MCP server's middleware
-            # You can filter for specific tools if needed:
-            # tool_filter=['fetch_net_worth', 'fetch_credit_report']
-        ),
         tax_calculator,
         income_aggregator,
         compute_taxable_income,

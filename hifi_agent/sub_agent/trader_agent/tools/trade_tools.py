@@ -54,8 +54,7 @@ def check_kite_auth(tool_context: ToolContext) -> Dict[str, Any]:
         }
 
     else:
-        # access_token = client.document("users").collection(user_id).get().to_dict().get("kite_access_token")
-        access_token = "1ieOtV24XszOP1TM4qeeUHAafGYDufDF"
+        access_token = client.document("users").collection(user_id).get().to_dict().get("kite_access_token")
 
         if access_token:
             tool_context.state["kite_access_token"] = access_token

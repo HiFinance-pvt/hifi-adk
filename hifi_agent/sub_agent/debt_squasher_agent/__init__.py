@@ -1,3 +1,1 @@
-from .agent import trader_agent
-
-__all__ = ["trader_agent"]
+from .agent import debt_squasher_agent

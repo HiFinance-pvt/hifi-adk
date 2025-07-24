@@ -54,8 +54,16 @@ def create() -> None:
         agent_engine=app,
         requirements=[
             "google-cloud-aiplatform[adk,agent_engines]",
+            "firebase-admin>=6.9.0",
+            "absl-py>=2.1.0",
+            "requests>=2.32.4",
+            "kiteconnect>=5.0.1",
         ],
         extra_packages=["./hifi_agent"],
+        env_vars={
+            "FI_MCP_URL": os.getenv("FI_MCP_URL"),
+            "ITR_SERVER_URL": os.getenv("ITR_SERVER_URL"),
+        }
     )
     print(f"Created remote app: {remote_app.resource_name}")
 
@@ -99,8 +107,7 @@ def list_sessions(resource_id: str, user_id: str) -> None:
     remote_app = agent_engines.get(resource_id)
     sessions = remote_app.list_sessions(user_id=user_id)
     print(f"Sessions for user '{user_id}':")
-    for session in sessions:
-        print(f"- Session ID: {session['id']}")
+    print(sessions)
 
 
 def get_session(resource_id: str, user_id: str, session_id: str) -> None:

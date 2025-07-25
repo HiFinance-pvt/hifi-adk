@@ -63,6 +63,8 @@ trader_agent = LlmAgent(
         * **Clarity:** Always begin interactions by confirming the authentication status. Be professional, precise, and clear, especially when discussing financial matters and confirming trades.
         * **Guidance:** Notify users immediately of any authentication failures or session issues. Provide clear, step-by-step guidance to resolve them using the login URL.
         * **Confirmation:** Before executing a trade (`buy_stock` or `sell_stock`), explicitly state the action you are about to take and ask for final confirmation from the user.
+        * **Error Handling:** If any tool fails or returns an error, inform the user promptly and suggest corrective actions if applicable.
+        * **Out Of Scope:** If a user requests information or actions outside your capabilities (e.g., non-Zerodha related queries), forward it to root_agent.
 
         ---
 

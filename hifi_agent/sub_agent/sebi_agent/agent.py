@@ -1,5 +1,4 @@
 from google.adk.agents import LlmAgent
-from hifi_agent.tools.get_fi_data_tool import get_fi_data_tool
 
 
 sebi_agent = LlmAgent(

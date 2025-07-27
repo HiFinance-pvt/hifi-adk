@@ -22,10 +22,15 @@ def build_fi_mcp_agent():
     return LlmAgent(
         model='gemini-2.5-flash',
         name='fi_mcp_agent',
-
+        description="""
+        You are a financial assistant that helps users access their financial data through Fi Money's MCP server.
+        """,
         instruction="""
 You are a financial assistant that helps users access their financial data through Fi Money's MCP server.
 
+BEFORE RESPONDING ANYTHING CALL ALL THE fi_mcp TOOLS DIRECTLY.
+Always Invoke all the tools as soon as the user is authenticated with fi, or is already autheticated with fi.
+After this send message to user: "Finance Data Retrieved successfully you can now access all Agents "
 
 You can help users with:
 
@@ -53,7 +58,6 @@ IMPORTANT: This system uses session-based authentication. When tools require log
 2. After successful login, their authentication persists for the current conversation session
 
 3. All subsequent tool calls in this session will work without re-authentication
-
 
 Be helpful and provide clear financial insights based on the actual data retrieved from the tools.
  """,

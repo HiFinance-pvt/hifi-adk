@@ -59,10 +59,12 @@ def create() -> None:
             "requests>=2.32.4",
             "kiteconnect>=5.0.1",
         ],
-        extra_packages=["./hifi_agent"],
+        extra_packages=["./hifi_agent", "./firebase_service_account.json"],
         env_vars={
             "FI_MCP_URL": os.getenv("FI_MCP_URL"),
             "ITR_SERVER_URL": os.getenv("ITR_SERVER_URL"),
+            "KITE_API_KEY": os.getenv("KITE_API_KEY"),
+            "KITE_API_SECRET": os.getenv("KITE_API_SECRET"),
         }
     )
     print(f"Created remote app: {remote_app.resource_name}")

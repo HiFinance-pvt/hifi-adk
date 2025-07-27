@@ -54,7 +54,14 @@ def check_kite_auth(tool_context: ToolContext) -> Dict[str, Any]:
         }
 
     else:
-        access_token = client.document("users").collection(user_id).get().to_dict().get("kite_access_token")
+        try:
+            access_token = client.document("users").collection(user_id).get().to_dict().get("kite_access_token")
+        except Exception as e:
+            logger.error(f"Failed to get access token: {str(e)}")
+            return {
+                "message": "You are not authenticated with Zerodha. Please login first.",
+                "status": "unauthenticated"
+            }
 
         if access_token:
             tool_context.state["kite_access_token"] = access_token

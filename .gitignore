@@ -33,4 +33,6 @@ Thumbs.db
 
 # Sensitive information (e.g., local configuration, credentials)
 local_settings.py
-.env
+.
+
+firebase_service_account.json

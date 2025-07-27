@@ -2,6 +2,8 @@ from google.adk.agents import LlmAgent
 # from google.adk.tools.openapi_tool.openapi_spec_parser.openapi_toolset import OpenAPIToolset
 
 from .tools.trade_tools import  buy_stock, sell_stock, get_portfolio, get_order_status, get_zerodha_login_url, check_kite_auth, get_user_profile
+from google.adk.tools.agent_tool import AgentTool
+from .stock_symbol_parser.agent import stock_symbol_parser
 
 # TODO: 
 # add days and time limit for buy/sell orders
@@ -71,8 +73,9 @@ trader_agent = LlmAgent(
         **Example Workflow:**
 
         1.  **User Request:** "Show me my holdings."
-        2.  **Authentication Check:** You call the `check_kite_auth` tool. It returns `{"authenticated": false}`.
-        3.  **Re-authentication Flow:**
+        2.  **You call the `get_zerodha_login_url` tool, It returns a login url to user and ask user to use link and authenticate.
+        3.  **Authentication Check:** You call the `check_kite_auth` tool. If it returns `{"authenticated": false}`, do the following
+            **Re-authentication Flow:**
             * You respond: "Your session has expired or is invalid. To proceed, you need to log in to Zerodha."
             * You call the `get_zerodha_login_url` tool.
             * You present the returned login link to the user: "Please use this link to log in: [URL]".
@@ -80,6 +83,9 @@ trader_agent = LlmAgent(
             * You call `check_kite_auth` again. It now returns `{"authenticated": true}`.
         4.  **Execute Request:** Now that the session is valid, you call the `get_portfolio` tool.
         5.  **Response:** You display the user's portfolio holdings retrieved from the tool.
+
+        IMPORTANT:
+         - Use stock_symbol_parser agent tool to get stock symbol from user input.
     """,
 
     tools=[
@@ -89,6 +95,7 @@ trader_agent = LlmAgent(
         sell_stock,
         get_portfolio,
         get_order_status,
-        get_user_profile
+        get_user_profile,
+        AgentTool(stock_symbol_parser)
     ]
 )

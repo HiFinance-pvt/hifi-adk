@@ -41,7 +41,7 @@ def check_kite_auth(tool_context: ToolContext) -> Dict[str, Any]:
     Returns:
         A dictionary containing the authentication status and user details if authenticated.
     """
-    user_id = tool_context.state.get("user_id")
+    user_id ="A9jtt4OCqOUOb11p6llWFBCSBuv1"
     access_token = tool_context.state.get("kite_access_token")
 
     if access_token:

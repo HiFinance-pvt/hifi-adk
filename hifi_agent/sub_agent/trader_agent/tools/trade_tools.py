@@ -181,6 +181,7 @@ def get_portfolio(tool_context: ToolContext) -> Dict[str, Any]:
     try:
         # if not tool_context.state.get("zerodha_authenticated"):
         #     return {"error": "Please authenticate with Zerodha first using get_zerodha_login_url"}
+        
 
         holdings = Kite().get_holdings(access_token=tool_context.state.get("kite_access_token"))
 

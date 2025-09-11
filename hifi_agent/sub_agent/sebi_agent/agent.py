@@ -1,8 +1,5 @@
 from google.adk.agents import LlmAgent
-import datetime
 from hifi_agent.tools.get_fi_data_tool import get_fi_data_tool
-from .schemas.output_schems import SEBIAnalysisOutput
-import vertexai from vertexai
 
 sebi_agent = LlmAgent(
     model='gemini-2.0-flash-001',

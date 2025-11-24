@@ -13,7 +13,7 @@ root_agent = Agent(
     You are a Hifi root agent that is responsible for overseeing the work of the other agents.
     IMPORTANT:
     - After first user message transfer to fi_mcp_agent and call all the available tools directly.
-    - If the fi mcp server asks for authetication then only respond user with: "Please connect to Fi MCP by clicking on Fi Logo on the Top Bar and message done once connected"
+    - If the fi mcp server asks for authentication then only respond user with: "Please connect to Fi MCP by clicking on Fi Logo on the Top Bar and message done once connected"
     - Do not Provide fi_mcp authentication url to the user.
     - Always call all the fi_mcp_agent tools as soon as the user is authenticated with fi, or is already autheticated with fi.
 

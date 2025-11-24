@@ -1,13 +1,10 @@
 from typing import Dict, Any
 import json
-
 from dotenv import load_dotenv
 from google.adk.tools.tool_context import ToolContext
 import logging
-
 from ..core import Kite, client
 from ..schema import StockActionSchema
-
 
 load_dotenv()
 
@@ -18,11 +15,7 @@ def get_zerodha_login_url(tool_context: ToolContext) -> str:
     Get the Zerodha login URL for user authentication.
     Returns the URL where user needs to login to get request token.
     """
-    
     login_url = Kite().generate_login_url()
-    
-    # Store in session for later use
-    tool_context.state["kite_authenticated"] = False
 
     return f"Please visit this URL to authenticate with Zerodha: {login_url}"
 
@@ -35,49 +28,76 @@ def check_kite_auth(tool_context: ToolContext) -> Dict[str, Any]:
     Args:
         tool_context: The context containing user state and session data.
 
-    Raises:
-        ValueError: If user_id or kite_access_token is not found in tool_context state.
-
     Returns:
         A dictionary containing the authentication status and user details if authenticated.
     """
-    user_id ="A9jtt4OCqOUOb11p6llWFBCSBuv1"
+    user_id = tool_context.state.get('user_id')
     access_token = tool_context.state.get("kite_access_token")
 
+    # Validate user_id exists
+    if not user_id:
+        logger.error("User ID not found in tool_context state")
+        return {
+            "message": "User ID not found. Please ensure you are logged in.",
+            "status": "error"
+        }
+
+    logger.info(f"Checking authentication for user: {user_id}")
+    # Don't print access tokens for security reasons
+
+    # If access token exists in state, return authenticated
     if access_token:
         return {
             "message": "You are authenticated with Zerodha.",
-            "user_id": tool_context.state.get("kite_user_id"),
-            "access_token": tool_context.state.get("kite_access_token"),
-            "kite_authenticated": tool_context.state.get("kite_authenticated", True),
+            "user_id": user_id,
+            "access_token": access_token,
+            "kite_authenticated": True,
             "status": "authenticated"
         }
 
-    else:
-        try:
-            access_token = client.document("users").collection(user_id).get().to_dict().get("kite_access_token")
-        except Exception as e:
-            logger.error(f"Failed to get access token: {str(e)}")
+    # Try to fetch from Firestore
+    try:
+        # Correct Firestore path: collection -> document
+        user_doc_ref = client.collection("users").document(user_id)
+        user_doc = user_doc_ref.get()
+        
+        if not user_doc.exists:
+            logger.warning(f"User document not found in Firestore for user_id: {user_id}")
             return {
                 "message": "You are not authenticated with Zerodha. Please login first.",
                 "status": "unauthenticated"
             }
-
-        if access_token:
-            tool_context.state["kite_access_token"] = access_token
-            tool_context.state["kite_authenticated"] = True
-            return {
-                "message": "You are authenticated with Zerodha.",
-                "user_id": tool_context.state.get("kite_user_id"),
-                "access_token": tool_context.state.get("kite_access_token"),
-                "status": "authenticated"
-            }
-
-        else:
+        
+        user_data = user_doc.to_dict()
+        access_token = user_data.get("kite_access_token")
+        
+        if not access_token:
+            logger.warning(f"Access token not found in Firestore for user_id: {user_id}")
             return {
                 "message": "You are not authenticated with Zerodha. Please login first.",
                 "status": "unauthenticated"
             }
+        
+        # Update state with fetched access token
+        logger.info(f"Access token retrieved from Firestore for user: {user_id}")
+        tool_context.state["kite_access_token"] = access_token
+        tool_context.state["kite_authenticated"] = True
+        
+        return {
+            "message": "You are authenticated with Zerodha.",
+            "user_id": user_id,
+            "access_token": access_token,
+            "kite_authenticated": True,
+            "status": "authenticated"
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to get access token from Firestore: {str(e)}", exc_info=True)
+        return {
+            "message": "Failed to verify authentication. Please try logging in again.",
+            "status": "error",
+            "error": str(e)
+        }
 
 def buy_stock(
     symbol: str,
@@ -98,7 +118,7 @@ def buy_stock(
     """
     try:
        # Check if user is authenticated
-        if not tool_context.state.get("kite_authenticated") or not tool_context.state.get("kite_access_token"):
+        if not tool_context.state.get("kite_access_token"):
             return {"error": "Please authenticate with Zerodha first using get_zerodha_login_url"}
         
         order_params = {
@@ -230,8 +250,6 @@ def get_portfolio(tool_context: ToolContext) -> Dict[str, Any]:
 def get_order_status(order_id: str, tool_context: ToolContext) -> Dict[str, Any]:
     """Get status of a specific order."""
     try:
-        if not tool_context.state.get("zerodha_authenticated"):
-            return {"error": "Please authenticate with Zerodha first using get_zerodha_login_url"}
         
         orders = Kite().get_order_history(access_token=tool_context.state.get("kite_access_token"))
         
@@ -256,8 +274,6 @@ def get_order_status(order_id: str, tool_context: ToolContext) -> Dict[str, Any]
 def get_user_profile(tool_context: ToolContext) -> Dict[str, Any]:
     """Get user's profile information."""
     try:
-        if not tool_context.state.get("zerodha_authenticated"):
-            return {"error": "Please authenticate with Zerodha first using get_zerodha_login_url"}
         user_profile_bytes = Kite().get_user_profile(access_token=tool_context.state.get("kite_access_token"))
         user_profile = json.loads(user_profile_bytes.decode('utf-8'))
 

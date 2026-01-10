@@ -33,7 +33,6 @@ async def generate_itr_prefill_json(pan: str, current_assessment_year: str, tool
     credit_report_data = tool_context.state.get('credit_report', [])
     epf_details_data = tool_context.state.get('epf_details', [])
     mf_transactions_data = tool_context.state.get('mf_transactions', [])
-    bank_transactions_data = tool_context.state.get('bank_transactions', [])
 
     itr_prefill_data: Dict[str, Any] = {}
     warnings: List[str] = []

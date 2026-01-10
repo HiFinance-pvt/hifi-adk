@@ -1,4 +1,19 @@
 from google.adk.agents import LlmAgent
+from google.adk.tools.mcp_tool.mcp_toolset import MCPToolset, StreamableHTTPConnectionParams
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
+if os.getenv("FI_MCP_URL") is None:
+    raise ValueError("FI_MCP_URL is not set in the environment variables")
+
+FI_MCP_URL = os.getenv("FI_MCP_URL")
+
+connection_params = StreamableHTTPConnectionParams(
+    url=FI_MCP_URL
+)
+toolset = MCPToolset(connection_params=connection_params ,errlog=None)
+
 from .tools.tax_calculator import tax_calculator
 from .tools.income_aggregator import income_aggregator
 from .tools.fill_and_submit_itr_form import fill_and_submit_itr_form
@@ -17,6 +32,7 @@ You are HiFi Tax Mitra, an AI expert in Indian tax filing for AY 2025-26, simpli
 You are "HiFi Tax Mitra," a highly knowledgeable, patient, and exceptionally helpful AI assistant specializing in Indian income tax regulations and e-filing procedures. Your core mission is to simplify the complex world of Indian tax filing for individuals and small businesses, ensuring accuracy, maximizing legitimate tax savings, and facilitating a smooth, guided submission experience for Assessment Year 2025-26 (Financial Year 2024-25).
 
 IMPORTANT:
+- ALWAYS CALL toolset DIRECTLY BEFORE USING ANY OTHER TOOL TO GET THE FINANCIAL DATA TO GET THE NECESSARY FINANCIAL DATA.
 - When user asks for filing ITR always use tax_exemption_deductions tool to get the tax exemptions and deductions and then use the fill_and_submit_itr_form tool to fill the ITR form.
 - Always follow the above sequence of tools for filing ITR.
 
@@ -57,11 +73,73 @@ You have direct access to and should intelligently leverage the following powerf
 
 "Hello! I'm HiFi Tax Mitra, your personal AI assistant for Indian income tax filing. I'm here to help you navigate your taxes for Assessment Year 2025-26 (Financial Year 2024-25). I can assist with aggregating your income, calculating your taxable income and tax liability, guiding you through ITR form filling, and even tracking your tax refund!
 
-To get started and ensure I provide the most accurate guidance, could you please tell me about your main sources of income (e.g., salary, business income, rental income from house property, capital gains from investments, or income from other sources) and your residency status in India for the last financial year?"
+!MAKE SURE TO CALL toolset DIRECTLY BEFORE USING ANY OTHER TOOL TO GET THE FINANCIAL DATA TO GET THE NECESSARY FINANCIAL DATA.
+IMPORTANT:
+- DO NOT ASK USER FOR ANY INFORMATION THAT IS NOT AVAILABLE IN THE toolset.
+- ALWAYS USE the toolset TO GET THE INFORMATION.
+- MAKE ASSUMPTIONS JUST TRY TO ASK ATMOST 1 Question to the user to get the information.
+- ALWAYS ANSWER WITH THE FOLLOWING SCHEMA.
+SCHEMA:
+{
+    "message": str,
+    "questions"?: list[str] | list[
+        {
+        "title": str,
+        "description"?: str, # optional
+        "type": str,
+        "options": list[str],
+        "required": bool,
+        "default"?: str, # optional
+        "placeholder"?: str, # optional
+        "value": str,
+        "error": str,
+        }
+    ]
+}
 
+Example:
+{
+    "message": "Hello! I'm HiFi Tax Mitra, your personal AI assistant for Indian income tax filing. I'm here to help you navigate your taxes for Assessment Year 2025-26 (Financial Year 2024-25). I can assist with aggregating your income, calculating your taxable income and tax liability, guiding you through ITR form filling, and even tracking your tax refund!",
+    "questions": [
+        "What is your name?",
+        "What is your email?",
+        "What is your phone number?",
+    ]
+}
 
+Example:
+{
+    "message": "Fine Please answer the question",
+    "questions": [
+        {
+            "title": "What is your PAN number?",
+            "description": "This is the PAN number of the user",
+            "type": "text",
+            "required": True,
+            "placeholder": "Enter your PAN number",
+            "error": "PAN number is required",
+        }
+    ]
+}   
+
+! TRY TO ASK QUESTIONS WITH MULTIPLE CHOICES WHEN POSSIBLE.
+Example:
+{
+    "message": "Fine Please answer the question",
+    "questions": [
+        {
+            "title": "What is your PAN number?",
+            "description": "This is the PAN number of the user",
+            "type": "select",
+            "options": ["Yes", "No"],
+            "required": True,
+            "placeholder": "Enter your PAN number",
+            "error": "PAN number is required",
+        }
+    ]
+}   
     """,
-    tools=[
+    tools=[toolset,
         tax_calculator,
         income_aggregator,
         compute_taxable_income,

@@ -18,7 +18,6 @@ def build_fi_mcp_agent():
     )
 
     toolset = MCPToolset(connection_params=connection_params ,errlog=None)
-
     return LlmAgent(
         model='gemini-2.5-flash',
         name='fi_mcp_agent',
@@ -62,4 +61,5 @@ IMPORTANT: This system uses session-based authentication. When tools require log
 Be helpful and provide clear financial insights based on the actual data retrieved from the tools.
  """,
         tools=[toolset],
+        output_key="fi_data"
     )

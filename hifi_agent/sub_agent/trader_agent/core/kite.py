@@ -1,15 +1,11 @@
 import os
-
-from dotenv import load_dotenv
-from kiteconnect import KiteConnect
-
 from ..schema import StockActionSchema
-
-load_dotenv()
-
 
 class Kite:
     def __init__(self):
+        from kiteconnect import KiteConnect
+        from dotenv import load_dotenv
+        load_dotenv()
         self.kite = KiteConnect(api_key=os.getenv("KITE_API_KEY"))
 
     def generate_login_url(self):

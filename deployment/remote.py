@@ -55,6 +55,7 @@ def create() -> None:
         requirements=[
             "google-cloud-aiplatform[adk,agent_engines]",
             "firebase-admin>=6.9.0",
+            "google-cloud-firestore",
             "absl-py>=2.1.0",
             "requests>=2.32.4",
             "kiteconnect>=5.0.1",

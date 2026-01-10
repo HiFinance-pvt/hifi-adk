@@ -3,7 +3,7 @@ import json
 from dotenv import load_dotenv
 from google.adk.tools.tool_context import ToolContext
 import logging
-from ..core import Kite, client
+from ..core import Kite, get_firestore_client
 from ..schema import StockActionSchema
 
 load_dotenv()
@@ -58,7 +58,7 @@ def check_kite_auth(tool_context: ToolContext) -> Dict[str, Any]:
     # Try to fetch from Firestore
     try:
         # Correct Firestore path: collection -> document
-        user_doc_ref = client.collection("users").document(user_id)
+        user_doc_ref = get_firestore_client().collection("users").document(user_id)
         user_doc = user_doc_ref.get()
         
         if not user_doc.exists:

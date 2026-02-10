@@ -2,6 +2,8 @@ from google.adk.agents import LlmAgent
 from google.adk.tools.mcp_tool.mcp_toolset import MCPToolset, StreamableHTTPConnectionParams
 import os
 from dotenv import load_dotenv
+
+from hifi_agent import model
 load_dotenv()
 
 if os.getenv("FI_MCP_URL") is None:
@@ -15,7 +17,7 @@ connection_params = StreamableHTTPConnectionParams(
 toolset = MCPToolset(connection_params=connection_params ,errlog=None)
 
 tax_exemption_deductions = LlmAgent(
-    model='gemini-2.0-flash-001',
+    model=model.model[0],
     name='tax_exemption_deductions',
     description='An AI tax assistant specializing in the Indian tax system, which deduces tax exemptions and deductions using bank transactions',
     instruction="""

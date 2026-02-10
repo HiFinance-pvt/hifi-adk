@@ -1,8 +1,10 @@
 from google.adk.agents import Agent
 from google.adk.tools import google_search
 
+from hifi_agent import model
+
 stock_symbol_parser = Agent(
-    model='gemini-2.0-flash-001',
+    model=model.model[0],
     name='stock_symbol_parser',
     description="An intelligent tool that extracts stock symbols from natural language input and performs web searches to find the corresponding stock symbol.",
     instruction="""

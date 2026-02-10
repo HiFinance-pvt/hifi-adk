@@ -1,4 +1,6 @@
 from google.adk.agents import LlmAgent
+
+from hifi_agent import model
 # from google.adk.tools.openapi_tool.openapi_spec_parser.openapi_toolset import OpenAPIToolset
 
 from .tools.trade_tools import  buy_stock, sell_stock, get_portfolio, get_order_status, get_zerodha_login_url, check_kite_auth, get_user_profile
@@ -6,7 +8,7 @@ from google.adk.tools.agent_tool import AgentTool
 from .stock_symbol_parser.agent import stock_symbol_parser
 
 trader_agent = LlmAgent(
-    model='gemini-2.0-flash-001',
+    model=model.model[0],
     name='trader_agent',
     description='A specialized stock trading agent that provides comprehensive trading capabilities through Zerodha brokerage platform. This agent can authenticate users, execute buy/sell orders, monitor portfolios, and track order status for Indian stock markets (NSE). It supports both LIMIT and MARKET order types with real-time portfolio management and order tracking.',
     instruction =  """

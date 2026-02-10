@@ -3,6 +3,7 @@ import json
 from dotenv import load_dotenv
 from google.adk.tools.tool_context import ToolContext
 import logging
+from google.cloud import firestore
 from ..core import Kite, get_firestore_client
 from ..schema import StockActionSchema
 
@@ -13,10 +14,34 @@ logger = logging.getLogger(__name__)
 def get_zerodha_login_url(tool_context: ToolContext) -> str:
     """
     Get the Zerodha login URL for user authentication.
-    Returns the URL where user needs to login to get request token.
+    First checks if user is already authenticated.
+    Returns the URL where user needs to login to get request token if not authenticated.
     """
+    user_id = tool_context.state.get('user_id')
+    
+    # Check if user_id exists
+    if user_id:
+        try:
+            # Check Firestore for existing integration
+            zerodha_doc_ref = get_firestore_client().collection("users").document(user_id).collection("integrations").document("zerodha")
+            zerodha_doc = zerodha_doc_ref.get()
+            
+            if zerodha_doc.exists:
+                zerodha_data = zerodha_doc.to_dict()
+                integration_status = zerodha_data.get("status")
+                access_token = zerodha_data.get("accessToken")
+                
+                # If already connected with valid token, inform user
+                if integration_status == "connected" and access_token:
+                    logger.info(f"User {user_id} already has active Zerodha integration")
+                    return "You are already authenticated with Zerodha. Your integration is active."
+                elif integration_status in ["expired", "error"]:
+                    logger.info(f"User {user_id} has {integration_status} Zerodha integration, providing new login URL")
+        except Exception as e:
+            logger.warning(f"Error checking existing integration: {str(e)}")
+    
+    # Generate and return login URL if not authenticated or check failed
     login_url = Kite().generate_login_url()
-
     return f"Please visit this URL to authenticate with Zerodha: {login_url}"
 
 def check_kite_auth(tool_context: ToolContext) -> Dict[str, Any]:
@@ -57,19 +82,28 @@ def check_kite_auth(tool_context: ToolContext) -> Dict[str, Any]:
 
     # Try to fetch from Firestore
     try:
-        # Correct Firestore path: collection -> document
-        user_doc_ref = get_firestore_client().collection("users").document(user_id)
-        user_doc = user_doc_ref.get()
+        # New Firestore path: users/{userId}/integrations/zerodha
+        zerodha_doc_ref = get_firestore_client().collection("users").document(user_id).collection("integrations").document("zerodha")
+        zerodha_doc = zerodha_doc_ref.get()
         
-        if not user_doc.exists:
-            logger.warning(f"User document not found in Firestore for user_id: {user_id}")
+        if not zerodha_doc.exists:
+            logger.warning(f"Zerodha integration not found in Firestore for user_id: {user_id}")
             return {
                 "message": "You are not authenticated with Zerodha. Please login first.",
                 "status": "unauthenticated"
             }
         
-        user_data = user_doc.to_dict()
-        access_token = user_data.get("kite_access_token")
+        zerodha_data = zerodha_doc.to_dict()
+        integration_status = zerodha_data.get("status")
+        access_token = zerodha_data.get("accessToken")
+        
+        # Check integration status
+        if integration_status not in ["connected"]:
+            logger.warning(f"Zerodha integration status is '{integration_status}' for user_id: {user_id}")
+            return {
+                "message": f"Zerodha integration is {integration_status}. Please reconnect.",
+                "status": integration_status
+            }
         
         if not access_token:
             logger.warning(f"Access token not found in Firestore for user_id: {user_id}")
@@ -83,12 +117,16 @@ def check_kite_auth(tool_context: ToolContext) -> Dict[str, Any]:
         tool_context.state["kite_access_token"] = access_token
         tool_context.state["kite_authenticated"] = True
         
+        # Update lastVerifiedAt timestamp
+        zerodha_doc_ref.update({"lastVerifiedAt": firestore.SERVER_TIMESTAMP})
+        
         return {
             "message": "You are authenticated with Zerodha.",
             "user_id": user_id,
             "access_token": access_token,
             "kite_authenticated": True,
-            "status": "authenticated"
+            "status": "authenticated",
+            "integration_status": integration_status
         }
         
     except Exception as e:

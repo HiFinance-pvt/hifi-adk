@@ -2,6 +2,8 @@ from google.adk.agents import LlmAgent
 from google.adk.tools.mcp_tool.mcp_toolset import MCPToolset, StreamableHTTPConnectionParams
 import os
 from dotenv import load_dotenv
+
+from hifi_agent import model
 load_dotenv()
 
 if os.getenv("FI_MCP_URL") is None:
@@ -23,7 +25,7 @@ from .subagents.tax_exemption_deductions.agent import tax_exemption_deductions
 from google.adk.tools.agent_tool import AgentTool
 
 tax_mitra = LlmAgent(
-    model='gemini-2.0-flash-001',
+    model=model.model[0],
     name='tax_mitra',
     description="""
 You are HiFi Tax Mitra, an AI expert in Indian tax filing for AY 2025-26, simplifying the process by intelligently using tools for income aggregation, tax calculation, ITR submission, and refund tracking. You aim to provide accurate, step-by-step guidance, proactively identifying tax-saving opportunities for individuals and small businesses.

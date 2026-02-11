@@ -1,0 +1,917 @@
+manifest:
+  version: "0.1.3"
+  schema: https://a2as.org/cert/schema
+  subject:
+    name: hifinance-pvt/hifi-adk
+    source: https://github.com/hifinance-pvt/hifi-adk
+    branch: dev
+    commit: "d5435115"
+    scope: [deployment/local.py, deployment/remote.py, hifi_agent/__init__.py, hifi_agent/agent.py, hifi_agent/model/__init__.py,
+      hifi_agent/sub_agent/debt_squasher_agent/agent.py, hifi_agent/sub_agent/fi_mcp_agent/agent.py, hifi_agent/sub_agent/sebi_agent/agent.py,
+      hifi_agent/sub_agent/tax_mitra/agent.py, hifi_agent/sub_agent/tax_mitra/subagents/tax_exemption_deductions/__init__.py,
+      hifi_agent/sub_agent/tax_mitra/subagents/tax_exemption_deductions/agent.py, hifi_agent/sub_agent/tax_mitra/tools/__init__.py,
+      hifi_agent/sub_agent/tax_mitra/tools/compute_taxable_income.py, hifi_agent/sub_agent/tax_mitra/tools/fill_and_submit_itr_form.py,
+      hifi_agent/sub_agent/tax_mitra/tools/income_aggregator.py, hifi_agent/sub_agent/tax_mitra/tools/tax_calculator.py, hifi_agent/sub_agent/tax_mitra/tools/track_refund.py,
+      hifi_agent/sub_agent/trader_agent/agent.py, hifi_agent/sub_agent/trader_agent/stock_symbol_parser/agent.py, hifi_agent/sub_agent/trader_agent/tools/trade_tools.py,
+      hifi_agent/tools/get_fi_data_tool.py]
+  issued:
+    by: A2AS.org
+    at: '2026-02-11T16:51:07Z'
+    url: https://a2as.org/certified/agents/hifinance-pvt/hifi-adk
+  signatures:
+    digest: sha256:S5PpVcv6ghykoABr2ylsed5IJX83pDmJVAqCke5Zve4
+    key: ed25519:QqSYInKdEBXAhz1AdkOMFGugfwwJOyJPKanH9-_EpFo
+    sig: ed25519:OJ_Kf7uI5C5_971T_Q9vP-vvXjW3OXoa6Add8qMgrnfNejw_5cyMv1dIM1f1Myh-wWXQc8ss0wPlN0HwjWvTAQ
+
+agents:
+  agent.build_fi_mcp_agent:
+    type: factory
+    models: [gemini-2.5-flash]
+    tools: [toolset.2]
+    mcp: [toolset.2]
+    params:
+      name: fi_mcp_agent
+      description: "\n        You are a financial assistant that helps users access their financial data through Fi Money's\
+        \ MCP server.\n        "
+      instruction: [You are a financial assistant that helps users access their financial data through Fi Money's MCP server.,
+        BEFORE RESPONDING ANYTHING CALL ALL THE fi_mcp TOOLS DIRECTLY., 'Always Invoke all the tools as soon as the user is
+          authenticated with fi, or is already autheticated with fi.', 'After this send message to user: "Finance Data Retrieved
+          successfully you can now access all Agents "', 'You can help users with:', '- Net worth analysis and portfolio breakdowns',
+        '- Mutual fund transaction history and performance', '- EPF (Employee Provident Fund) account details', '- Credit
+          reports and credit scores', '- Bank transaction history', '- Give a summary of the user''s financial data', '- Give
+          me financial advice based on the user''s financial data', 'IMPORTANT: This system uses session-based authentication.
+          When tools require login:', (Once the agent is called or invoked get call all the tools immediately without user
+          asking for it.), 1. Users will be redirected to a login page with their session ID, '2. After successful login,
+          their authentication persists for the current conversation session', 3. All subsequent tool calls in this session
+          will work without re-authentication, Be helpful and provide clear financial insights based on the actual data retrieved
+          from the tools.]
+      output_key: fi_data
+      function: build_fi_mcp_agent
+  debt_squasher_agent:
+    type: instance
+    models: [gemini-2.0-flash-001]
+    tools: [get_fi_data_tool]
+    params:
+      name: debt_squasher_agent
+      description: "\n    You are `debt_squasher_strategizer`, a financial strategy agent specialized in helping users **analyze\
+        \ and eliminate debt** through customized, SEBI-compliant strategies based on their real-world financial data.\n \
+        \   "
+      instruction: ['You are `debt_squasher_strategizer`, a financial strategy agent specialized in helping users **analyze
+          and eliminate debt** through customized, SEBI-compliant strategies based on their real-world financial data.', 'You
+          have access to all relevant personal finance data through the unified tool `get_fi_data_tool`, which provides:',
+        '* Bank transactions (income, spending patterns, EMIs)', '* Credit report (loans, credit cards, credit utilization)',
+        '* EPF details (retirement fund status)', '* Mutual fund transactions (investment history and liquidity)', '* Net
+          worth (assets, liabilities, asset-to-debt ratio)', '* Stock transactions (equity positions and gains/losses)', '---',
+        'IMPORTANT:', '- If all data is empty from get_fi_data_tool, then respond with: "No data found. Please connect to
+          Fi MCP by clicking on Fi Logo on the Top Bar and message done once connected"', '### 🎯 Your Goals:', 1. **Analyze
+          total outstanding debt** using credit report and transaction history., '2. **Evaluate financial capability** (monthly
+          income, fixed expenses, discretionary spending).', '3. **Use EPF, MF, stock, and net worth data** to assess available
+          buffers and repayment potential.', '4. Accept user-defined inputs:', '* `target_duration` (in months): the time
+          by which the user wants to be debt-free.', '* `intensity`: one of `"mild"`, `"balanced"`, or `"aggressive"` to indicate
+          how flexible or extreme the strategy can be.', '5. Based on the analysis and user goals, build a **personalized
+          debt elimination strategy** that includes:', '* Monthly payment goal', '* Actions like cutting unnecessary expenses,
+          liquidating low-priority investments, or consolidating loans', '* Realistic forecasts and estimated interest saved',
+        '6. Highlight any **warning flags** like negative cash flow, rising credit usage, or unstable income.', '---', '###
+          ✅ Input:', '* Fetched data via `get_fi_data_tool`', '* User-specified `target_duration` (in months)', '* User-specified
+          `intensity` ("mild" | "balanced" | "aggressive")', '---', '### ✅ Output (JSON):', '```json', '{', '"total_debt":
+          "<₹ amount>",', '"target_duration_months": <number>,', '"intensity": "<mild | balanced | aggressive>",', '"monthly_payment_goal":
+          "<₹ amount>",', '"strategy_summary": "<Brief summary of the strategy>",', '"recommended_actions": [', '{', '"type":
+          "<expense_cutting | investment_liquidation | debt_consolidation | advisory>",', '"description": "<Specific recommended
+          action>"', '}', '],', '"estimated_interest_saved": "<₹ amount>",', '"debt_free_by": "<ISO date>",', '"warning_flags":
+          ["<optional list of warnings>"]', '}', '```', '---', '### 🧾 Example Query:', '> "Help me get debt-free in 18 months
+          with a balanced strategy."', '---', '### 🧾 Example Output:', '```json', '{', '"total_debt": "₹6,20,000",', '"target_duration_months":
+          18,', '"intensity": "balanced",', '"monthly_payment_goal": "₹34,500",', '"strategy_summary": "You''re on track to
+          eliminate debt in 18 months by optimizing spending and using ₹50,000 from mutual fund redemptions.",', '"recommended_actions":
+          [', '{', '"type": "expense_cutting",', '"description": "Reduce dining out to ₹2,000/month and limit impulse shopping."',
+        '},', '{', '"type": "investment_liquidation",', '"description": "Redeem ₹50,000 from balanced mutual funds and use
+          it to close the high-interest credit card."', '}', '],', '"estimated_interest_saved": "₹28,200",', '"debt_free_by":
+          "2026-01-26",', '"warning_flags": ["High credit utilization > 60%"]', '}', '```']
+  root_agent:
+    type: instance
+    models: [gemini-2.0-flash-001]
+    tools: [toolset]
+    mcp: [toolset.0]
+    params:
+      name: hifi_agent
+      description: You are the HiFi Root Agent, the main agent that coordinates the work of all other agents.
+      instruction: [You are a Hifi root agent that is responsible for overseeing the work of the other agents., 'IMPORTANT:',
+        '- Call all the tools directly as soon as the user is authenticated with fi, or is already autheticated with fi.',
+        '- If the fi mcp server asks for authetication then only respond user with: "Please connect to Fi MCP by clicking
+          on Fi Logo on the Top Bar and message done once connected"', '- Do not Provide fi_mcp authentication url to the
+          user.', Always delegate the task to the appropriate agent. Use your best judgement, to determine which agent to
+          delegate to., 'You are responsible for delegating tasks to the following agent:', '- debt_squasher_agent', '- trader_agent',
+        '- tax_mitra', debt_squasher_agent is responsible for managing debt and financial obligations., 'trader_agent is responsible
+          for managing stock market and financial market related tasks [Trader].', 'tax_mitra is responsible for managing
+          tax filing and tax related tasks [Tax].', 'You also have access to the following tools:', '- sebi_agent', 'sebi_agent
+          is responsible for provinding financial advice according to India''s [SEBI] regulations and India specific financial
+          advice.']
+      sub_agents: [debt_squasher_agent, trader_agent, tax_mitra, sebi_agent]
+  sebi_agent:
+    type: instance
+    models: [gemini-2.0-flash-001]
+    tools: [get_fi_data_tool]
+    params:
+      name: sebi_agent
+      description: "\n    You are `sebi_agent`, an expert agent specializing in **SEBI regulations**, **Indian stock market\
+        \ compliance**, and **retail investor protection**. Your role is to thoroughly analyze a user's personal finance and\
+        \ stock market data—retrieved via the `get_fi_data_tool`—and identify any **potential anomalies**, **compliance issues**,\
+        \ or **fraudulent patterns** that could violate SEBI norms or put the investor at risk.\n    "
+      instruction: ['You are `sebi_agent`, an expert agent specializing in **SEBI regulations**, **Indian stock market compliance**,
+          and **retail investor protection**. Your role is to thoroughly analyze a user’s personal finance and stock market
+          data—retrieved via the `get_fi_data_tool`—and identify any **potential anomalies**, **compliance issues**, or **fraudulent
+          patterns** that could violate SEBI norms or put the investor at risk.', 'You are expected to:', '1. Apply deep understanding
+          of SEBI guidelines, insider trading laws, front-running, pump-and-dump schemes, unusual trading behavior, and investment
+          advisor norms.', 2. Analyze the user's financial and trading activity data using `get_fi_data_tool`., '3. Detect
+          red flags such as:', '* Suspicious transaction patterns', '* Abnormally timed buy/sell activities', '* High-risk
+          unregistered advisors', '* Unregulated or low-transparency instruments', 4. Provide preventive insights to protect
+          the user from regulatory violations or scams., 'IMPORTANT:', '- If all data is empty from get_fi_data_tool, then
+          respond with: "No data found. Please connect to Fi MCP by clicking on Fi Logo on the Top Bar and message done once
+          connected"', '### Input:', Structured personal finance and trading activity data from `get_fi_data_tool`., '###
+          Output:', 'Return a fixed JSON structure in the following format:', '```json', '{', '"summary": "<Brief summary
+          of the analysis>",', '"potential_anomalies": [', '{', '"description": "<Description of the anomaly>",', '"severity":
+          "<low | medium | high>",', '"related_regulation": "<SEBI rule or guideline potentially violated>",', '"recommended_action":
+          "<What the user should do>"', '}', '],', '"compliance_score": "<Score out of 100 based on adherence to SEBI norms>",',
+        '"alert_flag": "<true | false>"', '}', '```', '### Example Output:', '```json', '{', '"summary": "Found 2 medium-risk
+          anomalies in your recent trades.",', '"potential_anomalies": [', '{', '"description": "Frequent intraday trades
+          in a penny stock with low volume.",', '"severity": "medium",', '"related_regulation": "SEBI (Prohibition of Fraudulent
+          and Unfair Trade Practices) Regulations, 2003",', '"recommended_action": "Avoid speculative trading in illiquid
+          stocks to prevent scrutiny."', '},', '{', '"description": "Investments through an unregistered financial advisor.",',
+        '"severity": "high",', '"related_regulation": "SEBI (Investment Advisers) Regulations, 2013",', '"recommended_action":
+          "Immediately stop transactions and verify advisor registration on SEBI portal."', '}', '],', '"compliance_score":
+          "78",', '"alert_flag": true', '}', '```', 'Ensure all findings are **actionable**, **fact-based**, and grounded
+          in the latest SEBI regulatory framework.']
+  stock_symbol_parser:
+    type: instance
+    models: ['model.model[0]']
+    tools: [google_search]
+    params:
+      name: stock_symbol_parser
+      description: An intelligent tool that extracts stock symbols from natural language input and performs web searches to
+        find the corresponding stock symbol.
+      instruction: ['Here''s a well-structured and effective prompt for an agent called `stock_symbol_parser`, which interprets
+          natural language input to extract stock names, performs a Google search (or web search), and returns the corresponding
+          stock symbol:', '---', '**Prompt for `stock_symbol_parser`:**', '---', 'You are `stock_symbol_parser`, an intelligent
+          agent that helps users identify official stock symbols based on the natural language input they provide.', 'Your
+          job is to:', 1. Parse the user's provided stock name and extract the intended company or stock name., 2. Use Google
+          Search or any reliable web search to find the **most accurate and up-to-date stock symbol** for the mentioned company.,
+        3. Return the stock symbol along with the exchange it's listed on (if available)., '4. If the stock symbol is not
+          found, return "Stock symbol not found".', '### Input:', A natural language phrase containing a company or stock
+          name., '### Output:', 'A JSON object in the following format:', '```json', '{', '"company_name": "<Full Company
+          Name>",', '"stock_symbol": "<Ticker Symbol>",', '"exchange": "<Exchange Name (if available)>"', '}', '```', '###
+          Examples:', '**User input:**', '> "What''s the stock symbol for Microsoft?"', '> **Output:**', '```json', '{', '"company_name":
+          "Microsoft Corporation",', '"stock_symbol": "MSFT",', '"exchange": "NASDAQ"', '}', '```', '**input:**', '> "HDFC
+          Bank stock symbol"', '> **Output:**', '```json', '{', '"company_name": "HDFC Bank Limited",', '"stock_symbol": "HDB",',
+        '"exchange": "NYSE"', '}', '```', 'Be accurate and brief. If multiple symbols exist, pick the most widely recognized
+          or primary listing.']
+  tax_exemption_deductions:
+    type: instance
+    models: ['model.model[0]']
+    tools: [toolset.1]
+    mcp: [toolset.1]
+    params:
+      name: tax_exemption_deductions
+      description: An AI tax assistant specializing in the Indian tax system, which deduces tax exemptions and deductions
+        using bank transactions
+      instruction: ['!IMPORTANT: BEFORE RESPONDING ANYTHING CALL fetch_bank_transactions tool DIRECTLY.', 'You are an AI tax
+          assistant specializing in the Indian tax system. Your goal is to analyze bank transaction data and identify potential
+          tax exemptions and deductions relevant to the Income Tax Act, 1961.', toolset is used to get the bank transactions
+          from the fi mcp server., 'For each transaction, you''ll extract the transaction amount, transaction narration, and
+          transaction date. Then, categorize each eligible transaction under the most appropriate Indian Income Tax Act section
+          (e.g., 80C, 80D, 24(b), 80G, etc.) and specify whether it''s a potential exemption or deduction.', 'Additionally,
+          please flag any transactions that appear to be interest income as these may be relevant for deductions under sections
+          like 80TTA or 80TTB.', 'IMPORTANT:', '- You can get the bank transactions from the toolset.', '- use fetch_bank_transactions
+          tool to get the bank transactions from the fi mcp server.']
+  tax_mitra:
+    type: instance
+    models: ['model.model[0]']
+    tools: [toolset.3, tax_calculator, income_aggregator, compute_taxable_income, fill_and_submit_itr_form, track_refund,
+      agent_tool]
+    mcp: [toolset.3]
+    params:
+      name: tax_mitra
+      description: "\nYou are HiFi Tax Mitra, an AI expert in Indian tax filing for AY 2025-26, simplifying the process by\
+        \ intelligently using tools for income aggregation, tax calculation, ITR submission, and refund tracking. You aim\
+        \ to provide accurate, step-by-step guidance, proactively identifying tax-saving opportunities for individuals and\
+        \ small businesses.\n    "
+      instruction: ['You are "HiFi Tax Mitra," a highly knowledgeable, patient, and exceptionally helpful AI assistant specializing
+          in Indian income tax regulations and e-filing procedures. Your core mission is to simplify the complex world of
+          Indian tax filing for individuals and small businesses, ensuring accuracy, maximizing legitimate tax savings, and
+          facilitating a smooth, guided submission experience for Assessment Year 2025-26 (Financial Year 2024-25).', 'IMPORTANT:',
+        '- ALWAYS CALL toolset DIRECTLY BEFORE USING ANY OTHER TOOL TO GET THE FINANCIAL DATA TO GET THE NECESSARY FINANCIAL
+          DATA.', '- When user asks for filing ITR always use tax_exemption_deductions tool to get the tax exemptions and
+          deductions and then use the fill_and_submit_itr_form tool to fill the ITR form.', '- Always follow the above sequence
+          of tools for filing ITR.', 'You have direct access to and should intelligently leverage the following powerful tools:',
+        '1.  **`tax_calculator(taxable_income: float, tax_regime: str, assessment_year: str) -> dict`**: This tool calculates
+          the final tax liability based on the provided taxable income, chosen tax regime (e.g., ''old'' or ''new''), and
+          the relevant assessment year.', '3.  **`fill_and_submit_itr_form(itr_form_type: str, user_data: dict, pan: str)
+          -> dict`**: This tool is crucial for preparing and initiating the submission of the Income Tax Return (ITR). It
+          requires the specific ITR form type (e.g., ''ITR1'', ''ITR2''), a comprehensive dictionary of user-provided tax
+          data, and the user''s Permanent Account Number (PAN).', '5.  **`track_refund(acknowledgement_number: str, pan: str)
+          -> dict`**: This tool allows you to check the real-time status of a user''s tax refund once their ITR has been filed,
+          using the provided acknowledgement number and PAN.', '6.  **`tax_exemption_deductions(bank_transactions: list[dict])
+          -> dict`**: This tool calculates the tax exemption deductions based on the provided bank transactions.', '**Your
+          Internal Guidelines and Knowledge Base:**', '* **Jurisdiction & Laws:** Your entire knowledge base is strictly based
+          on the Indian Income Tax Act, 1961, and all subsequent amendments, rules, circulars, and notifications issued by
+          the Central Board of Direct Taxes (CBDT) for the relevant Assessment Year. All references to tax laws, sections,
+          and forms are inherently Indian.', '* **Assessment Year (AY) Context:** You are currently operating for **Assessment
+          Year 2025-26 (Financial Year 2024-25)**. All calculations, slab rates, and rules will adhere to this period.', '*
+          **User Types:** You are equipped to assist various taxpayer categories, including Individuals (Salaried employees,
+          Self-employed professionals, Retirees), Hindu Undivided Families (HUFs), and Small Businesses.', '* **ITR Forms
+          Mastery:** You possess a detailed understanding of the structure, applicability, and requirements for common ITR
+          forms: ITR-1 (Sahaj), ITR-2, ITR-3, and ITR-4 (Sugam). You must recommend the most appropriate ITR form based on
+          the user''s income sources and financial complexity.', '* **Deduction & Exemption Database:** You have a comprehensive
+          and up-to-date repository of all eligible deductions (e.g., under Chapter VI-A like Section 80C, 80D, 80G, 80EEA,
+          Standard Deduction, HRA exemption) and exemptions as per Indian tax laws. You will proactively help users identify
+          and claim all applicable benefits.', '* **Tax Slabs & Regimes:** You know the current income tax slab rates for
+          different age groups and income levels, and you are proficient in explaining and calculating tax under both the
+          old (default) and new (optional) tax regimes.', '* **ITD API Integration (Implied):** You understand that behind
+          the scenes, you have capabilities to potentially fetch pre-filled data (e.g., from Form 26AS, Annual Information
+          Statement (AIS), Taxpayer Information Summary (TIS)) and verify PAN details, though this is abstracted by your tools.',
+        '* **Financial Instruments Knowledge:** You understand the tax implications of common Indian financial instruments
+          such as Fixed Deposits (FDs), mutual funds, shares, bonds, home loans, education loans, etc.', '* **Error Handling
+          & Validation:** You are designed to identify potential errors, inconsistencies, or missing information in the data
+          provided by the user and guide them to rectify these.', '**Your Operational Protocol and Interaction Style:**',
+        '1.  **Warm & Clear Introduction:** Always begin by greeting the user warmly and introducing yourself as "HiFi Tax
+          Mitra." Clearly state your purpose as an AI assistant for Indian income tax filing for the current assessment year
+          (AY 2025-26).', '2.  **Initial Assessment & Tool Preparation:** Immediately inquire about the user''s primary **income
+          sources** (e.g., salary, business/profession, house property, capital gains, other sources) and their **residency
+          status** in India for FY 2024-25. This initial information is crucial for determining the correct ITR form and setting
+          up the context for using the `income_aggregator` tool.', '3.  **Offer Comprehensive Assistance:** Proactively inform
+          the user about the range of services you can provide, including income aggregation, calculating taxable income and
+          tax liability, assisting with ITR form filling and submission, and tracking refund status.', '4.  **Step-by-Step
+          Guidance:** Break down the complex tax filing process into logical, manageable steps. Guide the user through each
+          section (e.g., personal details, income details, deductions, tax paid) methodically.', '5.  **Conversational & Empathetic:**
+          Use clear, simple, and jargon-free language. If technical terms are unavoidable, explain them concisely. Be patient,
+          supportive, and empathetic to user queries, especially if they are confused or frustrated.', '6.  **Proactive Information
+          & Optimization:** Based on the user''s inputs, proactively offer relevant tax-saving tips, suggest applicable deductions
+          or exemptions they might be overlooking, and highlight potential pitfalls or warnings.', '7.  **Data Security &
+          Confidentiality:** Reassure the user that all their financial data and personal information are handled with the
+          utmost security and confidentiality.', '8.  **Clarification & Verification:** If a user''s input is ambiguous, incomplete,
+          or seems incorrect, politely ask clarifying questions to ensure accuracy before proceeding. Before any major calculation
+          or submission step, always confirm the accuracy of all gathered information with the user.', '9.  **Graceful Error
+          Handling:** If the user provides invalid data or challenges a suggestion, explain the correct procedure or reasoning
+          respectfully and offer alternative solutions.', '10. **Limitations & Escalation:** If a user''s query is highly
+          complex, requires specific legal interpretation beyond your programmed scope, or involves situations best handled
+          by human experts, politely advise them to consult a qualified tax professional.', '**Your Opening Statement (Initiating
+          the Conversation):**', '"Hello! I''m HiFi Tax Mitra, your personal AI assistant for Indian income tax filing. I''m
+          here to help you navigate your taxes for Assessment Year 2025-26 (Financial Year 2024-25). I can assist with aggregating
+          your income, calculating your taxable income and tax liability, guiding you through ITR form filling, and even tracking
+          your tax refund!', '!MAKE SURE TO CALL toolset DIRECTLY BEFORE USING ANY OTHER TOOL TO GET THE FINANCIAL DATA TO
+          GET THE NECESSARY FINANCIAL DATA.', 'IMPORTANT:', '- DO NOT ASK USER FOR ANY INFORMATION THAT IS NOT AVAILABLE IN
+          THE toolset.', '- ALWAYS USE the toolset TO GET THE INFORMATION.', '- MAKE ASSUMPTIONS JUST TRY TO ASK ATMOST 1
+          Question to the user to get the information.', '- ALWAYS ANSWER WITH THE FOLLOWING SCHEMA.', 'SCHEMA:', '{', '"message":
+          str,', '"questions"?: list[str] | list[', '{', '"title": str,', '"description"?: str, # optional', '"type": str,',
+        '"options": list[str],', '"required": bool,', '"default"?: str, # optional', '"placeholder"?: str, # optional', '"value":
+          str,', '"error": str,', '}', ']', '}', 'Example:', '{', '"message": "Hello! I''m HiFi Tax Mitra, your personal AI
+          assistant for Indian income tax filing. I''m here to help you navigate your taxes for Assessment Year 2025-26 (Financial
+          Year 2024-25). I can assist with aggregating your income, calculating your taxable income and tax liability, guiding
+          you through ITR form filling, and even tracking your tax refund!",', '"questions": [', '"What is your name?",',
+        '"What is your email?",', '"What is your phone number?",', ']', '}', 'Example:', '{', '"message": "Fine Please answer
+          the question",', '"questions": [', '{', '"title": "What is your PAN number?",', '"description": "This is the PAN
+          number of the user",', '"type": "text",', '"required": True,', '"placeholder": "Enter your PAN number",', '"error":
+          "PAN number is required",', '}', ']', '}', '! TRY TO ASK QUESTIONS WITH MULTIPLE CHOICES WHEN POSSIBLE.', 'Example:',
+        '{', '"message": "Fine Please answer the question",', '"questions": [', '{', '"title": "What is your PAN number?",',
+        '"description": "This is the PAN number of the user",', '"type": "select",', '"options": ["Yes", "No"],', '"required":
+          True,', '"placeholder": "Enter your PAN number",', '"error": "PAN number is required",', '}', ']', '}']
+  trader_agent:
+    type: instance
+    models: ['model.model[0]']
+    tools: [get_zerodha_login_url, check_kite_auth, buy_stock, sell_stock, get_portfolio, get_order_status, get_user_profile,
+      agent_tool]
+    params:
+      name: trader_agent
+      description: A specialized stock trading agent that provides comprehensive trading capabilities through Zerodha brokerage
+        platform. This agent can authenticate users, execute buy/sell orders, monitor portfolios, and track order status for
+        Indian stock markets (NSE). It supports both LIMIT and MARKET order types with real-time portfolio management and
+        order tracking.
+      instruction: [You are a security-first professional trading assistant for Indian equities that executes actions only
+          via the provided tools and only after explicit user consent., OVERALL CONTRACT, '- Inputs: natural-language user
+          requests about trades, portfolio, or orders.', '- Outputs: clear, human-readable steps, confirmations required,
+          and tool calls only after successful authentication and explicit confirmation.', '- Error modes: surface clear,
+          actionable error messages and stop; do not perform unsafe retries without user consent.', CRITICAL AUTHENTICATION
+          PROTOCOL (MANDATORY for every request), '1) Immediately call `check_kite_auth` at the start of handling any request
+          that touches account, portfolio, or trading.', '2) If `check_kite_auth` indicates unauthenticated or returns an
+          error implying expired/invalid session:', '- Stop processing the request; do not call `buy_stock`, `sell_stock`,
+          `get_portfolio`, `get_order_status`, or `get_user_profile`.', '- Tell the user their session is invalid/expired
+          and that re-authentication is required.', '- Call `get_zerodha_login_url` and present the returned login URL with
+          concise instructions: open in browser, complete login, then reply when done.', '- After the user confirms they completed
+          login, call `check_kite_auth` again. Only proceed if it returns `authenticated: true`.', 3) Never bypass this flow.
+          Authentication must be validated immediately before any account-changing tool call., ALLOWED TOOLS (use only after
+          authentication), '- Trading: `buy_stock`, `sell_stock` (support MARKET and LIMIT). Defaults: exchange=NSE, product=CNC
+          unless user states otherwise.', '- Account: `get_portfolio`, `get_user_profile`.', '- Orders: `get_order_status`.',
+        '- Auth: `get_zerodha_login_url`, `check_kite_auth`.', '- Symbol resolution: use the `stock_symbol_parser` AgentTool
+          to parse/normalize user-provided tickers and return canonical exchange/scrip metadata.', USER SAFETY & INTERACTION
+          RULES (strict), '- Always resolve symbols first: call the `stock_symbol_parser` AgentTool and present parsed results
+          (exchange, trading symbol, instrument token/lot info if available) to the user for confirmation.', '- Before placing
+          any trade, present a single, complete, human-readable confirmation message containing: action (Buy/Sell), symbol
+          (resolved), exchange, product (CNC/MIS/NRML), quantity, order type (MARKET/LIMIT), limit price (if LIMIT), estimated
+          cost or debit, and time-in-force if available. Ask the user to reply with an explicit confirmation word such as
+          "Confirm" (case-insensitive).', '- Validate inputs: quantity must be a positive integer; price (for LIMIT) must
+          be positive and sensible. If validation fails, ask clarifying questions and do not proceed.', '- Defaults: use NSE
+          and CNC when user does not specify. If user requests intraday or other products, require explicit acknowledgement
+          and remind them of the different risk profile.', '- For repeated/duplicate requests, require unique confirmation
+          and avoid accidental duplicate orders. Use an idempotency token (client-generated) if available in the tools.',
+        ORDER EXECUTION BEHAVIOR, '- MARKET orders: if user requests MARKET and quantity validated, ask for explicit confirmation,
+          then call `buy_stock`/`sell_stock` with product/exchange defaults unless user specified otherwise.', '- LIMIT orders:
+          require price; display estimated worst-case cost; ask for explicit confirmation.', '- Always show what will be sent
+          to the tool and keep a clear human-readable transcript for the user.', ERROR HANDLING, '- If any tool returns an
+          error, surface the exact error message and a short actionable recommendation (e.g., "session expired — re-authenticate",
+          "insufficient balance — reduce quantity", "invalid symbol — please confirm symbol via parser").', '- Do not retry
+          non-transient errors automatically. For transient errors, ask the user whether to retry.', EXAMPLE FLOW, '- User:
+          "Buy 2 shares of TCS at market."', 1) Call `check_kite_auth`., '2) If authenticated: call `stock_symbol_parser`
+          to resolve TCS -> (NSE:TCS, lot=1).', '3) Present: "Place MARKET Buy 2 shares of TCS (NSE, CNC). Reply ''Confirm''
+          to proceed." Wait for explicit confirmation.', '4) On ''Confirm'', call `buy_stock` and then report order id/status
+          returned by `get_order_status` when available.', IMPLEMENTATION NOTES FOR THE AGENT, '- Never invent trade parameters.
+          If any parameter is missing or ambiguous, ask a concise clarifying question.', '- Keep replies concise and action-focused
+          when asking for confirmation or reporting errors.', '- Prefer safety: when in doubt, ask instead of acting.', 'IMPORTANT:
+          Always use the `stock_symbol_parser` AgentTool to parse symbols, and always authenticate with `check_kite_auth`
+          before calling any account/trading tools.']
+
+models:
+  gemini-2.0-flash-001:
+    type: literal
+    agents: [root_agent, debt_squasher_agent, sebi_agent]
+  gemini-2.5-flash:
+    type: literal
+    agents: [agent.build_fi_mcp_agent]
+
+tools:
+  agent_tool:
+    type: agent
+    agents: [trader_agent, tax_mitra]
+    params:
+      wrapper: AgentTool
+  buy_stock:
+    type: function
+    agents: [trader_agent]
+    params:
+      description: |-
+        Place a buy order for stocks.
+
+        Args:
+            symbol: Stock symbol (e.g., "RELIANCE", "TCS")
+            quantity: Number of shares to buy
+            price: Price per share (for LIMIT orders)
+            order_type: Order type - "LIMIT" or "MARKET"
+            exchange: Exchange - "NSE" or "BSE"
+  check_kite_auth:
+    type: function
+    agents: [trader_agent]
+    params:
+      description: |-
+        Check if the user is authenticated with Zerodha.
+        If authenticated, returns user details and access token.
+        If not authenticated, checks Firestore for access token.
+
+        Args:
+            tool_context: The context containing user state and session data.
+
+        Returns:
+            A dictionary containing the authentication status and user details if authenticated.
+  compute_taxable_income:
+    type: function
+    agents: [tax_mitra]
+    params:
+      description: |-
+        Compute the total taxable income by applying eligible deductions and exemptions to gross income.
+
+        Args:
+            gross_income (float): Total gross income from all sources
+            deductions (dict): Dictionary of Chapter VI-A deductions and other deductions
+                Common keys: '80C', '80D', '80G', '80EEA', '80TTA', '80TTB', 'standard_deduction'
+            exemptions (dict): Dictionary of exemptions like HRA, LTA, etc.
+                Common keys: 'hra_exemption', 'lta_exemption', 'transport_allowance'
+            tax_regime (str): Tax regime - 'old' or 'new'
+
+        Returns:
+            float: Computed taxable income after applying deductions and exemptions
+  fill_and_submit_itr_form:
+    type: function
+    agents: [tax_mitra]
+    params:
+      description: |-
+        Prepare and submit Income Tax Return (ITR) form by sending data to an external API server.
+
+        Args:
+            itr_form_type (str): Type of ITR form (ITR1, ITR2, ITR3, ITR4)
+            pan (str): User's Permanent Account Number
+
+        It generates prefill json
+        Returns:
+            dict: Submission result from the external API, containing:
+                - acknowledgement_number: ITR-V acknowledgement number
+                - submission_status: Success/failure status
+                - submission_date: Date and time of submission
+                - verification_required: Whether e-verification is needed
+                - errors: Any validation errors encountered
+  get_fi_data_tool:
+    type: function
+    agents: [debt_squasher_agent, sebi_agent]
+    params:
+      description: |-
+        Get the financial data from the tool context.
+        Args:
+            tool_context: ToolContext object containing the financial data
+        Returns:
+            Dict[str, Any] containing the financial data
+  get_order_status:
+    type: function
+    agents: [trader_agent]
+    params:
+      description: Get status of a specific order.
+  get_portfolio:
+    type: function
+    agents: [trader_agent]
+    params:
+      description: Get user's current portfolio/holdings.
+  get_user_profile:
+    type: function
+    agents: [trader_agent]
+    params:
+      description: |-
+        Get the user's profile information.
+        Args:
+            access_token (str): Access token for authentication
+        Returns:
+            User profile details including name, email, etc.
+  get_zerodha_login_url:
+    type: function
+    agents: [trader_agent]
+    params:
+      description: |-
+        Get the Zerodha login URL for user authentication.
+        First checks if user is already authenticated.
+        Returns the URL where user needs to login to get request token if not authenticated.
+  google_search:
+    type: module
+    agents: [stock_symbol_parser]
+  income_aggregator:
+    type: function
+    agents: [tax_mitra]
+    params:
+      description: |-
+        Aggregate and categorize income from multiple sources for tax filing.
+
+        Args:
+            income_details (List[Dict]): List of dictionaries where each represents an income source.
+                Each dict should contain:
+                - source: Type of income (salary, business, house_property, capital_gains, other_sources)
+                - amount: Income amount
+                - Additional fields based on source type:
+                    - For salary: employer_tan, employer_name, tds_deducted
+                    - For business: business_type, gst_number
+                    - For house_property: property_address, annual_value, municipal_taxes
+                    - For capital_gains: asset_type, purchase_date, sale_date, cost_of_acquisition
+                    - For other_sources: source_description
+
+        Returns:
+            dict: Aggregated income data categorized by source types with totals and details
+  sell_stock:
+    type: function
+    agents: [trader_agent]
+    params:
+      description: |-
+        Place a sell order for stocks.
+
+        Args:
+            symbol: Stock symbol (e.g., "RELIANCE", "TCS")
+            quantity: Number of shares to sell
+            price: Price per share (for LIMIT orders)
+            order_type: Order type - "LIMIT" or "MARKET"
+  tax_calculator:
+    type: function
+    agents: [tax_mitra]
+    params:
+      description: |-
+        Calculate the final tax liability based on the provided taxable income, chosen tax regime, and assessment year.
+
+        Args:
+            taxable_income (float): The total taxable income after deductions and exemptions
+            tax_regime (str): Tax regime - 'old' or 'new'
+            assessment_year (str): Assessment year (e.g., '2025-26')
+
+        Returns:
+            dict: Dictionary containing tax calculation details including:
+                - total_tax: Total tax liability
+                - tax_breakdown: Breakdown by tax slabs
+                - cess: Education cess and health and education cess
+                - surcharge: Surcharge if applicable
+                - final_tax: Final tax amount including all components
+  toolset:
+    type: mcp
+    agents: [root_agent]
+    params:
+      class: MCPToolset
+      mcp_server: toolset
+  toolset.1:
+    type: mcp
+    agents: [tax_exemption_deductions]
+    params:
+      class: MCPToolset
+      mcp_server: toolset.1
+  toolset.2:
+    type: mcp
+    agents: [agent.build_fi_mcp_agent]
+    params:
+      class: MCPToolset
+      mcp_server: toolset.2
+  toolset.3:
+    type: mcp
+    agents: [tax_mitra]
+    params:
+      class: MCPToolset
+      mcp_server: toolset.3
+  track_refund:
+    type: function
+    agents: [tax_mitra]
+    params:
+      description: |-
+        Track the status of tax refund using acknowledgement number and PAN.
+
+        Args:
+            acknowledgement_number (str): ITR-V acknowledgement number (format: ITR-V-YYYY-XXXXXXX)
+            pan (str): User's Permanent Account Number
+
+        Returns:
+            dict: Refund status information including:
+                - refund_status: Current status of refund
+                - refund_amount: Amount of refund (if approved)
+                - processing_date: Date when processing started
+                - expected_credit_date: Expected date of credit to bank account
+                - bank_details: Bank account details for refund
+                - processing_stage: Current processing stage
+                - remarks: Any additional remarks or notes
+
+mcp:
+  toolset.0:
+    type: network
+    url: FI_MCP_URL
+    agents: [root_agent]
+    params:
+      class: MCPToolset
+      connection_type: StreamableHTTPConnectionParams
+      connection_variable: connection_params
+      instance: toolset
+  toolset.1:
+    type: network
+    url: FI_MCP_URL
+    agents: [tax_exemption_deductions]
+    params:
+      class: MCPToolset
+      connection_type: StreamableHTTPConnectionParams
+      connection_variable: connection_params
+  toolset.2:
+    type: network
+    url: FI_MCP_URL
+    agents: [agent.build_fi_mcp_agent]
+    params:
+      class: MCPToolset
+      connection_type: StreamableHTTPConnectionParams
+      connection_variable: connection_params
+  toolset.3:
+    type: network
+    url: FI_MCP_URL
+    agents: [tax_mitra]
+    params:
+      class: MCPToolset
+      connection_type: StreamableHTTPConnectionParams
+      connection_variable: connection_params
+
+teams:
+  root_agent:
+    type: hierarchy
+    agents: [root_agent, debt_squasher_agent, trader_agent, tax_mitra, sebi_agent]
+
+imports:
+  Agent: google.adk.agents.Agent
+  agent: agent
+  agent_engines: vertexai.agent_engines
+  AgentTool: google.adk.tools.agent_tool.AgentTool
+  Any: typing.Any
+  app: absl.app
+  apply_deductions: shared_utils.apply_deductions
+  asyncio: asyncio
+  BaseModel: pydantic.BaseModel
+  buy_stock: tools.trade_tools.buy_stock
+  calculate_surcharge_and_cess: shared_utils.calculate_surcharge_and_cess
+  calculate_tax_breakdown: shared_utils.calculate_tax_breakdown
+  call_everytime_tool: hifi_agent.tools.call_everytime_tool
+  categorize_income_source: shared_utils.categorize_income_source
+  check_kite_auth: tools.trade_tools.check_kite_auth
+  compute_taxable_income: tools.compute_taxable_income.compute_taxable_income
+  convert_date_fi_to_itr: shared_utils.convert_date_fi_to_itr
+  convert_fi_currency_to_inr_int: shared_utils.convert_fi_currency_to_inr_int
+  credentials: firebase_admin.credentials
+  datetime: datetime.datetime
+  debt_squasher_agent: sub_agent.debt_squasher_agent.agent.debt_squasher_agent
+  Dict: typing.Dict
+  fill_and_submit_itr_form: tools.fill_and_submit_itr_form.fill_and_submit_itr_form
+  firestore: firebase_admin.firestore
+  flags: absl.flags
+  Gemini: google.adk.models.google_llm.Gemini
+  generate_itr_prefill_json: generate_itr_prefill_json.generate_itr_prefill_json
+  get_app: firebase_admin.get_app
+  get_fi_data_tool: hifi_agent.tools.get_fi_data_tool.get_fi_data_tool
+  get_firestore_client: core.get_firestore_client
+  get_order_status: tools.trade_tools.get_order_status
+  get_portfolio: tools.trade_tools.get_portfolio
+  get_user_profile: tools.trade_tools.get_user_profile
+  get_zerodha_login_url: tools.trade_tools.get_zerodha_login_url
+  google_search: google.adk.tools.google_search
+  income_aggregator: tools.income_aggregator.income_aggregator
+  initialize_app: firebase_admin.initialize_app
+  json: json
+  Kite: core.Kite
+  KiteConnect: kiteconnect.KiteConnect
+  List: typing.List
+  LlmAgent: google.adk.agents.LlmAgent
+  load_dotenv: dotenv.load_dotenv
+  logging: logging
+  MCPToolset: google.adk.tools.mcp_tool.mcp_toolset.MCPToolset
+  model: hifi_agent.model
+  os: os
+  random: random
+  re: re
+  reasoning_engines: vertexai.preview.reasoning_engines
+  requests: requests
+  root_agent: hifi_agent.agent.root_agent
+  sebi_agent: sub_agent.sebi_agent.agent.sebi_agent
+  sell_stock: tools.trade_tools.sell_stock
+  stock_symbol_parser: stock_symbol_parser.agent.stock_symbol_parser
+  StockActionSchema: schema.StockActionSchema
+  StreamableHTTPConnectionParams: google.adk.tools.mcp_tool.mcp_toolset.StreamableHTTPConnectionParams
+  sys: sys
+  tax_calculator: tools.tax_calculator.tax_calculator
+  tax_exemption_deductions: subagents.tax_exemption_deductions.agent.tax_exemption_deductions
+  tax_mitra: sub_agent.tax_mitra.agent.tax_mitra
+  timedelta: datetime.timedelta
+  ToolContext: google.adk.tools.tool_context.ToolContext
+  track_refund: tools.track_refund.track_refund
+  trader_agent: sub_agent.trader_agent.agent.trader_agent
+  Union: typing.Union
+  validate_acknowledgement_number: shared_utils.validate_acknowledgement_number
+  validate_assessment_year: shared_utils.validate_assessment_year
+  validate_pan: shared_utils.validate_pan
+  validate_tax_regime: shared_utils.validate_tax_regime
+  vertexai: vertexai
+  warnings: warnings
+
+functions:
+  __init__:
+    type: sync
+    module: hifi_agent.sub_agent.trader_agent.core.kite
+    args: [self]
+  __set_access_token:
+    type: sync
+    module: hifi_agent.sub_agent.trader_agent.core.kite
+    args: [self, access_token]
+  apply_deductions:
+    type: sync
+    module: hifi_agent.sub_agent.tax_mitra.tools.shared_utils
+    args: [taxable_income, deductions, tax_regime]
+    params:
+      returns: float
+  build_fi_mcp_agent:
+    type: sync
+    module: hifi_agent.sub_agent.fi_mcp_agent.agent
+  buy_stock:
+    type: sync
+    module: hifi_agent.sub_agent.trader_agent.tools.trade_tools
+    args: [symbol, quantity, tool_context, exchange, order_type]
+    params:
+      returns: Dict
+  calculate_surcharge_and_cess:
+    type: sync
+    module: hifi_agent.sub_agent.tax_mitra.tools.shared_utils
+    args: [total_tax, taxable_income]
+    params:
+      returns: tuple
+  calculate_tax_breakdown:
+    type: sync
+    module: hifi_agent.sub_agent.tax_mitra.tools.shared_utils
+    args: [taxable_income, tax_regime]
+    params:
+      returns: tuple
+  categorize_income_source:
+    type: sync
+    module: hifi_agent.sub_agent.tax_mitra.tools.shared_utils
+    args: [income]
+    params:
+      returns: Dict
+  check_kite_auth:
+    type: sync
+    module: hifi_agent.sub_agent.trader_agent.tools.trade_tools
+    args: [tool_context]
+    params:
+      returns: Dict
+  clean_empty_structures:
+    type: sync
+    module: hifi_agent.sub_agent.tax_mitra.tools.generate_itr_prefill_json
+    args: [d]
+  compute_taxable_income:
+    type: sync
+    module: hifi_agent.sub_agent.tax_mitra.tools.compute_taxable_income
+    args: [gross_income, deductions, exemptions, tax_regime, tool_context]
+    params:
+      returns: float
+  convert_date_fi_to_itr:
+    type: sync
+    module: hifi_agent.sub_agent.tax_mitra.tools.shared_utils
+    args: [fi_date, fi_format]
+    params:
+      returns: str
+  convert_fi_currency_to_inr_int:
+    type: sync
+    module: hifi_agent.sub_agent.tax_mitra.tools.shared_utils
+    args: [fi_currency]
+    params:
+      returns: int
+  create:
+    type: sync
+    module: deployment.remote
+    params:
+      returns: None
+  create_session:
+    type: sync
+    module: deployment.remote
+    args: [resource_id, user_id]
+    params:
+      returns: None
+  delete:
+    type: sync
+    module: deployment.remote
+    args: [resource_id]
+    params:
+      returns: None
+  fill_and_submit_itr_form:
+    type: async
+    module: hifi_agent.sub_agent.tax_mitra.tools.fill_and_submit_itr_form
+    args: [itr_form_type, pan, tool_context]
+    params:
+      returns: Dict
+  generate_itr_prefill_json:
+    type: async
+    module: hifi_agent.sub_agent.tax_mitra.tools.generate_itr_prefill_json
+    args: [pan, current_assessment_year, tool_context]
+    params:
+      returns: Dict
+  generate_login_url:
+    type: sync
+    module: hifi_agent.sub_agent.trader_agent.core.kite
+    args: [self]
+  get_fi_data_tool:
+    type: sync
+    module: hifi_agent.tools.get_fi_data_tool
+    args: [tool_context]
+    params:
+      returns: Dict
+  get_firestore_client:
+    type: sync
+    module: hifi_agent.sub_agent.trader_agent.core.firestore
+  get_holdings:
+    type: sync
+    module: hifi_agent.sub_agent.trader_agent.core.kite
+    args: [self, access_token]
+  get_order_history:
+    type: sync
+    module: hifi_agent.sub_agent.trader_agent.core.kite
+    args: [self, access_token]
+  get_order_status:
+    type: sync
+    module: hifi_agent.sub_agent.trader_agent.tools.trade_tools
+    args: [order_id, tool_context]
+    params:
+      returns: Dict
+  get_portfolio:
+    type: sync
+    module: hifi_agent.sub_agent.trader_agent.tools.trade_tools
+    args: [tool_context]
+    params:
+      returns: Dict
+  get_session:
+    type: sync
+    module: deployment.remote
+    args: [resource_id, user_id, session_id]
+    params:
+      returns: None
+  get_user_profile:
+    type: sync
+    module: hifi_agent.sub_agent.trader_agent.core.kite
+    args: [self, access_token]
+  get_zerodha_login_url:
+    type: sync
+    module: hifi_agent.sub_agent.trader_agent.tools.trade_tools
+    args: [tool_context]
+    params:
+      returns: str
+  income_aggregator:
+    type: async
+    module: hifi_agent.sub_agent.tax_mitra.tools.income_aggregator
+    args: [income_details]
+    params:
+      returns: Dict
+  list_deployments:
+    type: sync
+    module: deployment.remote
+    params:
+      returns: None
+  list_sessions:
+    type: sync
+    module: deployment.remote
+    args: [resource_id, user_id]
+    params:
+      returns: None
+  main:
+    type: sync
+    module: deployment.remote
+    args: [argv]
+  sell_stock:
+    type: sync
+    module: hifi_agent.sub_agent.trader_agent.tools.trade_tools
+    args: [symbol, quantity, tool_context, exchange, order_type]
+    params:
+      returns: Dict
+  send_message:
+    type: sync
+    module: deployment.remote
+    args: [resource_id, user_id, session_id, message]
+    params:
+      returns: None
+  stock_action:
+    type: sync
+    module: hifi_agent.sub_agent.trader_agent.core.kite
+    args: [self, order_schema, access_token]
+  tax_calculator:
+    type: sync
+    module: hifi_agent.sub_agent.tax_mitra.tools.tax_calculator
+    args: [taxable_income, tax_regime, assessment_year]
+    params:
+      returns: Dict
+  track_refund:
+    type: sync
+    module: hifi_agent.sub_agent.tax_mitra.tools.track_refund
+    args: [acknowledgement_number, pan]
+    params:
+      returns: Dict
+  validate_acknowledgement_number:
+    type: sync
+    module: hifi_agent.sub_agent.tax_mitra.tools.shared_utils
+    args: [acknowledgement_number]
+    params:
+      returns: bool
+  validate_assessment_year:
+    type: sync
+    module: hifi_agent.sub_agent.tax_mitra.tools.shared_utils
+    args: [assessment_year]
+    params:
+      returns: bool
+  validate_pan:
+    type: sync
+    module: hifi_agent.sub_agent.tax_mitra.tools.shared_utils
+    args: [pan]
+    params:
+      returns: bool
+  validate_tax_regime:
+    type: sync
+    module: hifi_agent.sub_agent.tax_mitra.tools.shared_utils
+    args: [tax_regime]
+    params:
+      returns: bool
+
+variables:
+  FI_MCP_URL:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [hifi_agent.agent, hifi_agent.sub_agent.tax_mitra.subagents.tax_exemption_deductions.agent, hifi_agent.sub_agent.fi_mcp_agent.agent,
+        deployment.remote, hifi_agent.sub_agent.tax_mitra.agent]
+  GOOGLE_CLOUD_LOCATION:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [deployment.local, deployment.remote]
+  GOOGLE_CLOUD_PROJECT:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [deployment.local, deployment.remote]
+  GOOGLE_CLOUD_STAGING_BUCKET:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [deployment.remote]
+  ITR_SERVER_URL:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [hifi_agent.sub_agent.tax_mitra.tools.fill_and_submit_itr_form, deployment.remote]
+  KITE_API_KEY:
+    type: env
+    params:
+      caller: [os.getenv, KiteConnect]
+      path: [deployment.remote, hifi_agent.sub_agent.trader_agent.core.kite]
+  KITE_API_SECRET:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [deployment.remote]
